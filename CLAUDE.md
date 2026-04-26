@@ -55,13 +55,13 @@ Money is awarded only at delivery: `Main._on_arrived()` counts PLACED items, cal
 | `STAGED` | Frozen static, gravity off | 0 (ghost) |
 | `HELD` | Frozen kinematic, follows finger | 4 |
 | `PLACED` | Full RigidBody, gravity on | 2 |
-| `FALLEN` | Frozen static, red tint | 0 (ghost) |
+| `FALLEN` | Frozen static, hidden | 0 (ghost) |
 
 Rotation is free during Phase 1 so items can topple realistically. `_begin_travel()` locks rotation on all PLACED items so they stay flat during the drive.
 
 Each item gets a `PhysicsMaterial` (friction=0.8, rough=true, bounce=0) so item-to-item contacts are inelastic and don't fight the solver. Solver iterations are raised to 16 via `PhysicsServer2D.space_set_param` in `_build_world()` to prevent items compressing/squishing into each other under load.
 
-Layer 1 = truck bed surfaces. Layer 2 = placed items. Layer 4 = held items.
+Layer 1 = truck bed surfaces + explosion debris. Layer 2 = placed items. Layer 4 = held items.
 
 ### Placement Input (Multitouch)
 
@@ -101,6 +101,10 @@ add_child(truck)   # _ready() fires here with upgraded values
 
 The truck is rebuilt immediately when an upgrade is purchased (`_rebuild_truck()` in Main). The truck origin = top surface of the bed floor.
 
+Physics bodies built by `_build_physics()`: floor, left wall, right wall (`add_right_wall()`), and a full cab box (`_add_cab_wall()`) that matches the cab visual so items can land on the roof and can't pass through the cab face.
+
+Rail visuals are stored as `_lwall_vis` and `_rwall_vis` (`ColorRect` refs). `set_rail_opacity(alpha)` dims both rails; `Main._process()` calls it with `0.25` whenever any PLACED item exists, `1.0` when the bed is empty.
+
 ### Phase 2 Travel
 
 `Main._physics_process()` drives travel:
@@ -108,6 +112,15 @@ The truck is rebuilt immediately when an upgrade is purchased (`_rebuild_truck()
 - A spring force (`CARRY_SPRING = 3.0`) pulls each PLACED item's `linear_velocity.x` toward truck speed
 - Bump amplitude = base × `level_bump_scale()` × `UpgradeManager.bump_multiplier()`
 - Camera lerp runs in `_process`; truck movement in `_physics_process`
+
+### Item Fall & Explosion
+
+When a PLACED item crosses the fall zone (`Area2D` at `TRUCK_Y + 66`, mask=2), `Main._on_item_hit_ground()` fires:
+1. Reads `item.item_color` and `item._half_size` before state changes
+2. Calls `_spawn_explosion()` — 8 small `RigidBody2D` squares (layer 1) fly outward in an upward arc, bounce off the physics ground, then fade and `queue_free` after ~1.35 s
+3. Calls `item.mark_fallen()` — sets state FALLEN, clears collision, hides the item (`visible = false`), emits `fell` signal
+
+The `fell` signal chain: `item.fell` → `ItemSpawner._on_fell()` → `GameManager.on_item_fell()` → `GameManager.item_fell_off` signal → `Main._on_item_fell_off_hud()` updates "On Truck: X%" label.
 
 ### Difficulty Scaling
 
