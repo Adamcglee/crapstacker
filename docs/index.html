@@ -1,20 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<script src="coi-serviceworker.js"></script>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=portrait">
-		<link rel="manifest" href="manifest.json">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
 		<title>CrapStacker</title>
 		<style>
 html, body, #canvas {
 	margin: 0;
 	padding: 0;
-	background: #000;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
-	touch-action: none;
+	border: 0;
 }
 
 body {
@@ -26,9 +20,6 @@ body {
 
 #canvas {
 	display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
 }
 
 #canvas:focus {
@@ -120,7 +111,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":39760,"index.wasm":52126319},"focusCanvas":true,"gdextensionLibs":[]};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":63824,"index.wasm":52126319},"focusCanvas":true,"gdextensionLibs":[]};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
