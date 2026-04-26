@@ -11,6 +11,9 @@ var cab_height:   float = 105.0
 var wheel_r:      float = 26.0
 var bed_friction: float = 4.0
 
+var _lwall_vis: ColorRect
+var _rwall_vis: ColorRect
+
 func _ready() -> void:
 	_build_visuals()
 	_build_physics()
@@ -43,11 +46,11 @@ func _build_visuals() -> void:
 	floor_vis.position = Vector2(-bed_width / 2.0, 0.0)
 	add_child(floor_vis)
 
-	var lwall_vis := ColorRect.new()
-	lwall_vis.color = Color(0.34, 0.27, 0.18)
-	lwall_vis.size = Vector2(wall_thick, bed_depth + floor_thick)
-	lwall_vis.position = Vector2(-bed_width / 2.0 - wall_thick, -bed_depth)
-	add_child(lwall_vis)
+	_lwall_vis = ColorRect.new()
+	_lwall_vis.color = Color(0.34, 0.27, 0.18)
+	_lwall_vis.size = Vector2(wall_thick, bed_depth + floor_thick)
+	_lwall_vis.position = Vector2(-bed_width / 2.0 - wall_thick, -bed_depth)
+	add_child(_lwall_vis)
 
 	var chassis := ColorRect.new()
 	chassis.color = Color(0.20, 0.20, 0.22)
@@ -107,6 +110,7 @@ func _build_physics() -> void:
 	add_child(lwall)
 
 	add_right_wall()
+	_add_cab_wall()
 
 func add_right_wall() -> void:
 	if get_node_or_null("RightWall"):
@@ -125,10 +129,33 @@ func add_right_wall() -> void:
 		(-bed_depth + floor_thick) / 2.0
 	)
 
-	var rwall_vis := ColorRect.new()
-	rwall_vis.color = Color(0.34, 0.27, 0.18)
-	rwall_vis.size = Vector2(wall_thick, bed_depth + floor_thick)
-	rwall_vis.position = Vector2(bed_width / 2.0, -bed_depth)
-	add_child(rwall_vis)
+	_rwall_vis = ColorRect.new()
+	_rwall_vis.color = Color(0.34, 0.27, 0.18)
+	_rwall_vis.size = Vector2(wall_thick, bed_depth + floor_thick)
+	_rwall_vis.position = Vector2(bed_width / 2.0, -bed_depth)
+	add_child(_rwall_vis)
 
 	add_child(rwall)
+
+func _add_cab_wall() -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask  = 0
+	var s := RectangleShape2D.new()
+	# Full cab box so items can land on the roof and can't pass through the side
+	s.size = Vector2(cab_width, cab_height)
+	var c := CollisionShape2D.new()
+	c.shape = s
+	body.add_child(c)
+	# Center matches the cab visual: top-left corner is (-bed_width/2 - cab_width, -cab_height + floor_thick)
+	body.position = Vector2(
+		-bed_width / 2.0 - cab_width / 2.0,
+		floor_thick - cab_height / 2.0
+	)
+	add_child(body)
+
+func set_rail_opacity(alpha: float) -> void:
+	if _lwall_vis:
+		_lwall_vis.modulate.a = alpha
+	if _rwall_vis:
+		_rwall_vis.modulate.a = alpha

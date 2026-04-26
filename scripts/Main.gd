@@ -110,7 +110,7 @@ func _build_world() -> void:
 	)
 
 	# Staging area visuals
-	_draw_slot(STAGE_POS, "PLACE ITEM", Color(0.15, 0.55, 0.15, 0.35))
+	_draw_slot(STAGE_POS, "LOAD THIS ITEM", Color(0.15, 0.55, 0.15, 0.35))
 	_draw_slot(PREVIEW_POS, "NEXT UP", Color(0.15, 0.15, 0.55, 0.25))
 
 	# Item spawner
@@ -448,6 +448,14 @@ func _physics_process(delta: float) -> void:
 
 # Camera lerp stays in _process for smooth visuals at display framerate.
 func _process(delta: float) -> void:
+	if is_instance_valid(truck):
+		var has_placed := false
+		for child in _item_container.get_children():
+			if child is HouseholdItem and (child as HouseholdItem).state == HouseholdItem.State.PLACED:
+				has_placed = true
+				break
+		truck.set_rail_opacity(0.25 if has_placed else 1.0)
+
 	if not _is_travelling:
 		return
 	_camera.global_position = _camera.global_position.lerp(_camera_target, delta * 8.0)
@@ -477,9 +485,54 @@ func _on_arrived() -> void:
 	GameManager.set_phase(GameManager.GamePhase.RESULTS)
 
 func _on_item_hit_ground(body: Node2D) -> void:
-	# Only placed items (layer 2) reach here — staged and held are layer 0/4
-	if body.has_method("mark_fallen"):
-		body.mark_fallen()
+	if not (body is HouseholdItem):
+		return
+	var item := body as HouseholdItem
+	if item.state == HouseholdItem.State.FALLEN:
+		return
+	_spawn_explosion(item.global_position, item.item_color, item._half_size * 2.0)
+	item.mark_fallen()
+
+func _spawn_explosion(world_pos: Vector2, color: Color, item_size: Vector2) -> void:
+	for i in 8:
+		var piece := RigidBody2D.new()
+		piece.collision_layer = 1
+		piece.collision_mask  = 1
+
+		var ps := randf_range(5.0, 13.0)
+		var shape := RectangleShape2D.new()
+		shape.size = Vector2(ps, ps)
+		var col := CollisionShape2D.new()
+		col.shape = shape
+		piece.add_child(col)
+
+		var mat := PhysicsMaterial.new()
+		mat.bounce   = 0.45
+		mat.friction = 0.5
+		piece.physics_material_override = mat
+
+		var vis := ColorRect.new()
+		vis.color = color
+		vis.size = Vector2(ps, ps)
+		vis.position = Vector2(-ps * 0.5, -ps * 0.5)
+		piece.add_child(vis)
+
+		piece.position = world_pos + Vector2(
+			randf_range(-item_size.x * 0.3, item_size.x * 0.3),
+			randf_range(-item_size.y * 0.3, 0.0)
+		)
+		add_child(piece)
+
+		# Fan upward in a -150° to -30° arc (screen-up is negative Y)
+		var angle := randf_range(deg_to_rad(-150.0), deg_to_rad(-30.0))
+		var speed := randf_range(150.0, 420.0)
+		piece.linear_velocity = Vector2(cos(angle) * speed, sin(angle) * speed)
+		piece.angular_velocity = randf_range(-14.0, 14.0)
+
+		var tween := create_tween()
+		tween.tween_interval(0.8)
+		tween.tween_property(piece, "modulate:a", 0.0, 0.55)
+		tween.tween_callback(piece.queue_free)
 
 func _on_item_fell_off_hud(_item_name: String, _value: float) -> void:
 	if not _is_travelling:

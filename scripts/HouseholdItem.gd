@@ -9,6 +9,7 @@ signal fell(item: HouseholdItem)
 var item_id: String = ""
 var display_name: String = ""
 var value: float = 0.0
+var item_color: Color = Color.WHITE
 var state: State = State.STAGED
 var interactive: bool = true
 
@@ -23,6 +24,7 @@ func setup(def) -> void:
 	item_id = def.id
 	display_name = def.display_name
 	value = def.value
+	item_color = def.color
 	mass = def.mass
 	_half_size = def.size / 2.0
 
@@ -104,12 +106,11 @@ func mark_fallen() -> void:
 	state = State.FALLEN
 	_drag_touch = -1
 	_rotate_touch = -1
-	# Freeze in place so item stays visible on the road, red
 	freeze = true
 	freeze_mode = RigidBody2D.FREEZE_MODE_STATIC
 	collision_layer = 0
 	collision_mask = 0
-	modulate = Color(1.0, 0.3, 0.3, 0.85)
+	visible = false
 	fell.emit(self)
 
 # ── Input ───────────────────────────────────────────────────────────────────
