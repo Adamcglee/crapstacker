@@ -11,8 +11,9 @@ var cab_height:   float = 105.0
 var wheel_r:      float = 26.0
 var bed_friction: float = 4.0
 
-var _lwall_vis: ColorRect
-var _rwall_vis: ColorRect
+var _lwall_vis:    ColorRect
+var _rwall_vis:    ColorRect
+var _side_rail_vis: ColorRect
 
 func _ready() -> void:
 	_build_visuals()
@@ -60,6 +61,18 @@ func _build_visuals() -> void:
 
 	_make_wheel(-bed_width / 2.0 + 50.0)
 	_make_wheel(bed_width / 2.0 - 50.0)
+
+	# Side panel covering the bed above the walls — goes 25% when items are present.
+	# Positioned above the bed wall tops where items actually stack,
+	# with z=3 (absolute) so it sits in front of placed items (z=0) but
+	# behind held items (z=10).
+	_side_rail_vis = ColorRect.new()
+	_side_rail_vis.color = Color(0.34, 0.27, 0.18)
+	_side_rail_vis.size = Vector2(bed_width, bed_depth + floor_thick)
+	_side_rail_vis.position = Vector2(-bed_width / 2.0, -(bed_depth + floor_thick))
+	_side_rail_vis.z_as_relative = false
+	_side_rail_vis.z_index = 3
+	add_child(_side_rail_vis)
 
 func _make_wheel(cx: float) -> void:
 	var wheel := ColorRect.new()
@@ -155,7 +168,5 @@ func _add_cab_wall() -> void:
 	add_child(body)
 
 func set_rail_opacity(alpha: float) -> void:
-	if _lwall_vis:
-		_lwall_vis.modulate.a = alpha
-	if _rwall_vis:
-		_rwall_vis.modulate.a = alpha
+	if _side_rail_vis:
+		_side_rail_vis.modulate.a = alpha
