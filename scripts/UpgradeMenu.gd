@@ -17,13 +17,14 @@ func _ready() -> void:
 	GameManager.money_changed.connect(_on_money_changed)
 
 func _build_ui() -> void:
-	var px := (720.0 - PANEL_W) / 2.0
-	var py := (1280.0 - PANEL_H) / 2.0
+	var vp    := get_viewport().get_visible_rect().size
+	var px    := (vp.x - PANEL_W) / 2.0
+	var py    := (vp.y - PANEL_H) / 2.0
 
 	# Full-screen dimmer — blocks all touches behind the menu
 	var overlay := ColorRect.new()
 	overlay.color = Color(0, 0, 0, 0.7)
-	overlay.size = Vector2(720, 1280)
+	overlay.size = vp
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 
